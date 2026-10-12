@@ -22,8 +22,23 @@ from .tasks import get_task, TASK_REGISTRY
 
 # ── Gini coefficient helper ──────────────────────────────────────────────────
 
-def gini(values):
-    """Compute Gini coefficient of a list (0=perfectly equal, 1=maximally unequal)."""
+def gini(values: list[float]) -> float:
+    """Compute the Gini coefficient of a list of values.
+
+    The Gini coefficient measures inequality across a set of values:
+    - ``0.0`` means perfectly equal distribution (everyone gets the same).
+    - ``1.0`` means maximally unequal (one entity gets everything).
+
+    Used here to measure *fairness* of curtailment across loads — a low Gini
+    score means the burden is shared equitably rather than concentrated on a
+    single load.
+
+    Args:
+        values: Non-negative numeric values (e.g. per-load curtailment MW).
+
+    Returns:
+        Gini coefficient in the range ``[0.0, 1.0]``.
+    """
     if not values or sum(values) == 0:
         return 0.0
     n = len(values)

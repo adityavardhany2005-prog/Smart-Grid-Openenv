@@ -104,6 +104,27 @@ class Observation(BaseModel):
         description="Rich metadata: frequency_history, tripped_loads, battery_soc, fairness_gini, projected_deficit, etc."
     )
 
+    # ── Convenience helpers ──
+
+    @property
+    def is_critical(self) -> bool:
+        """Return True when the grid is in a critical, emergency, or blackout state."""
+        return self.alert_level in ("critical", "emergency", "blackout")
+
+    def summary(self) -> str:
+        """Return a compact one-line summary useful for logging and debugging.
+
+        Example output::
+
+            [Step 5 | 18:00] freq=49.62Hz WARNING | demand=450.0MW supply=420.0MW | batt=72%
+        """
+        return (
+            f"[Step {self.step_number} | {self.hour:02d}:00] "
+            f"freq={self.grid_frequency_hz:.2f}Hz {self.alert_level.upper()} | "
+            f"demand={self.total_demand_mw:.1f}MW supply={self.total_supply_mw:.1f}MW | "
+            f"batt={self.battery_soc_pct:.0f}%"
+        )
+
 
 # ---------------------------------------------------------------------------
 # Action — what the agent DOES each step

@@ -6,7 +6,8 @@ Weather states and Markov transition engine for the smart grid simulator.
 
 from __future__ import annotations
 import random
-from typing import Dict, Optional
+from collections import deque
+from typing import Deque, Dict, List, Optional
 
 
 # ── Weather definitions ─────────────────────────────────────────────────────
@@ -38,16 +39,30 @@ WEATHER_DESCRIPTIONS: Dict[str, str] = {
 
 
 class WeatherEngine:
-    """Markov-chain weather generator."""
+    """Markov-chain weather generator.
+
+    Tracks the last ``_HISTORY_LEN`` weather states so callers can observe
+    recent trends (e.g. "was it sunny the last 3 hours?") without storing
+    extra state in the environment itself.
+    """
+
+    _HISTORY_LEN: int = 24  # Keep one full day of weather history
 
     def __init__(self, seed: int = 42, initial: str = "clear"):
         self.rng = random.Random(seed)
         self.current = initial
+        self._history: Deque[str] = deque([initial], maxlen=self._HISTORY_LEN)
+
+    @property
+    def history(self) -> List[str]:
+        """Return the recent weather history (oldest → newest)."""
+        return list(self._history)
 
     def reset(self, seed: Optional[int] = None, initial: str = "clear") -> None:
         if seed is not None:
             self.rng = random.Random(seed)
         self.current = initial
+        self._history = deque([initial], maxlen=self._HISTORY_LEN)
 
     def advance(self) -> str:
         """Step forward one weather transition and return new state."""
@@ -59,6 +74,7 @@ class WeatherEngine:
             if r <= cumulative:
                 self.current = next_w
                 break
+        self._history.append(self.current)
         return self.current
 
     def effects(self) -> Dict:
